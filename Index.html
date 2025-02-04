@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shandar Game - Catch the Falling Objects</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f2f2f2;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #gameCanvas {
+            background-color: #87CEEB;
+            border: 2px solid black;
+            position: relative;
+        }
+
+        .score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            color: black;
+            font-weight: bold;
+        }
+
+        .gameOver {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: red;
+            font-weight: bold;
+        }
+
+        /* New animations */
+        @keyframes glowing {
+            0% { text-shadow: 0 0 5px #ff0000, 0 0 10px #ff0000, 0 0 15px #ff0000; }
+            50% { text-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000, 0 0 30px #ff0000; }
+            100% { text-shadow: 0 0 5px #ff0000, 0 0 10px #ff0000, 0 0 15px #ff0000; }
+        }
+
+        .score {
+            animation: glowing 1s infinite alternate;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="gameCanvas" width="500" height="600"></canvas>
+<div class="score">Score: <span id="score">0</span></div>
+<div class="gameOver" id="gameOverText">Game Over</div>
+
+<script>
+    // Game Variables
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let score = 0;
+    let gameOver = false;
+
+    // Sounds
+    const catchSound = new Audio('catch-sound.mp3');  // Add your sound file
+    const gameOverSound = new Audio('game-over.mp3'); // Add your sound file
+    const bgMusic = new Audio('background-music.mp3'); // Add background music
+    bgMusic.loop = true;
+    bgMusic.play();
+
+    // Player
+    const playerWidth = 50;
+    const playerHeight = 50;
+    let playerX = canvas.width / 2 - playerWidth / 2;
+    let playerY = canvas.height - playerHeight - 10;
+    const playerSpeed = 7;
+
+    // Falling Objects
+    const objectWidth = 30;
+    const objectHeight = 30;
+    let fallingObjects = [];
+    const fallingSpeed = 3;
+
+    // Movement
+    let leftPressed = false;
+    let rightPressed = false;
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') leftPressed = true;
+        if (e.key === 'ArrowRight') rightPressed = true;
+    });
+
+    document.addEventListener('keyup', (e) => {
+        if (e.key === 'ArrowLeft') leftPressed = false;
+        if (e.key === 'ArrowRight') rightPressed = false;
+    });
+
+    // Game Loop
+    function gameLoop() {
+        if (gameOver) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Move player
+        if (leftPressed && playerX > 0) playerX -= playerSpeed;
+        if (rightPressed && playerX < canvas.width - playerWidth) playerX += playerSpeed;
+
+        // Draw player
+        ctx.fillStyle = '#FF6347';
+        ctx.fillRect(playerX, playerY, playerWidth, playerHeight);
+
+        // Spawn new falling objects
+        if (Math.random() < 0.02) {
+            let objectX = Math.random() * (canvas.width - objectWidth);
+            fallingObjects.push({ x: objectX, y: 0 });
+        }
+
+        // Update falling objects
+        for (let i = 0; i < fallingObjects.length; i++) {
+            let obj = fallingObjects[i];
+            obj.y += fallingSpeed;
+
+            if (obj.y + objectHeight > playerY && obj.y + objectHeight < playerY + playerHeight &&
+                obj.x + objectWidth > playerX && obj.x < playerX + playerWidth) {
+                score++;
+                catchSound.play();
+                fallingObjects.splice(i, 1);
+                document.getElementById('score').textContent = score;
+            }
+
+            if (obj.y + objectHeight > canvas.height) {
+                gameOver = true;
+                gameOverSound.play();
+                document.getElementById('gameOverText').style.display = 'block';
+            }
+        }
+
+        // Draw falling objects
+        ctx.fillStyle = '#32CD32';
+        for (let obj of fallingObjects) {
+            ctx.fillRect(obj.x, obj.y, objectWidth, objectHeight);
+        }
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+</script>
+
+</body>
+</html>
